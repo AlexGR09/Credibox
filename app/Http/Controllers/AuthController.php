@@ -2,80 +2,74 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\hasRegistro;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Http\Controllers\FormatterController as Formatear;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    use hasRegistro;
+
     public function register(Request $request) {
-        $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|confirmed'            
-        ]);
-
-        $user = new User();
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->password = Hash::make($request->password);
-        $user->save();
-
-        return response()->json([
-            "status" => 1,
-            "msg" => "¡Registro de usuario exitoso!",
-        ]);    
+        $newUser = $this->registrar($request);
+        if ($newUser != null) {
+            $todolodemas['info']['mensaje'] = '¡Registro de usuario exitoso!';
+            return (new Formatear)->igor(null,200,$todolodemas);
+        }else{
+            $todolodemas['error']['mensaje'] = 'Error en el servidor, ocurrió un error inesperado';
+            $todolodemas['error']['errores'] = ['errorinesperado'=>[$th]];
+            return (new Formatear)->igor(null,500,$todolodemas);
+        }
     }
 
 
     public function login(Request $request) {
 
-        $request->validate([
-            "email" => "required|email",
-            "password" => "required"
-        ]);
+        try {
+            $todolodemas = [];
+            $request->validate([
+                "email" => "required|email",
+                "password" => "required"
+            ]);
 
-        $user = User::where("email", "=", $request->email)->first();
+            $user = User::where("email", "=", $request->email)->first();
 
-        if( isset($user->id) ){
-            if(Hash::check($request->password, $user->password)){
-                //creamos el token
-                $token = $user->createToken("auth_token")->plainTextToken;
-                //si está todo ok
-                return response()->json([
-                    "status" => 1,
-                    "msg" => "¡Usuario logueado exitosamente!",
-                    "access_token" => $token
-                ]);        
+            if( isset($user->id) ){
+                if(Hash::check($request->password, $user->password)){
+                    $token = $user->createToken("auth_token")->plainTextToken;
+
+                    $todolodemas['info']['mensaje'] = '¡Usuario logueado exitosamente!';
+                    $todolodemas['info']['access_token'] = [$token];
+                    return (new Formatear)->igor($user,200,$todolodemas);     
+                }else{
+                    $todolodemas['error']['mensaje'] = 'La password es incorrecta';
+                    return (new Formatear)->igor(null,404,$todolodemas);  
+                }
+
             }else{
-                return response()->json([
-                    "status" => 0,
-                    "msg" => "La password es incorrecta",
-                ], 404);    
+                $todolodemas['error']['mensaje'] = 'Usuario no registrado';
+                return (new Formatear)->igor(null,404,$todolodemas); 
             }
-
-        }else{
-            return response()->json([
-                "status" => 0,
-                "msg" => "Usuario no registrado",
-            ], 404);  
+        } catch (\Throwable $th) {
+            $todolodemas['error']['mensaje'] = 'Error en el servidor, ocurrió un error inesperado';
+            $todolodemas['error']['errores'] = ['errorinesperado'=>[$th]];
+            return (new Formatear)->igor(null,500,$todolodemas);
         }
     }
 
-    public function userProfile() {
-        return response()->json([
-            "status" => 0,
-            "msg" => "Acerca del perfil de usuario",
-            "data" => auth()->user()
-        ]); 
-    }
-
     public function logout() {
-        auth()->user()->tokens()->delete();
-        
-        return response()->json([
-            "status" => 1,
-            "msg" => "Cierre de Sesión",            
-        ]); 
+        try {
+            auth()->user()->tokens()->delete();
+            
+            $todolodemas['info']['mensaje'] = 'Cierre de Sesión';
+            return (new Formatear)->igor(null,200,$todolodemas);
+        } catch (\Throwable $th) {
+            $todolodemas['error']['mensaje'] = 'Error en el servidor, ocurrió un error inesperado';
+            $todolodemas['error']['errores'] = ['errorinesperado'=>[$th]];
+            return (new Formatear)->igor(null,500,$todolodemas);
+        }
     }
 }

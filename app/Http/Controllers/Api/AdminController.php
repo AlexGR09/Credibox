@@ -11,12 +11,12 @@ use App\Models\User;
 
 class AdminController extends Controller
 {
-    public function index(Request $request)
+  public function index(Request $request)
   {
-    /* try { */
-        $user_id = auth()->user()->id;
-        return $user_id;
-
+    try {
+        $user = auth()->user();
+        
+        $todolodemas = [];
         $limit = env('PAGINATION_LIMIT', 15);
         $maxPaginationLimit = env('MAX_PAGINATION_LIMIT', 500);
         $order = 'id';
@@ -26,9 +26,8 @@ class AdminController extends Controller
         if(isset($request->o)) $order = $request->o;
         if(isset($request->d)) $direction = $request->d;
 
-        if($user->puede($user,'Administracion','r')) //Primero verificar si cuenta con permisos
+        if($user->puede($user,'Administracion','r'))
         { 
-          $todolodemas = [];
           $recurso = User::orderBy($order,$direction)->paginate($limit);
 
           if(count($recurso)==0){
@@ -43,10 +42,10 @@ class AdminController extends Controller
           $todolodemas['error']['errores'] = ['permisos'=>['No cuenta con los permisos para este recurso']];
           return (new Formatear)->igor(null,403,$todolodemas);
         }
-        /* } catch (\Throwable $th) {
-          $todolodemas['error']['mensaje'] = 'Error en el servidor, ocurrió un error inesperado';
-          $todolodemas['error']['errores'] = ['errorinesperado'=>[$th]];
-          return (new Formatear)->igor(null,500,$todolodemas);
-        } */
+        } catch (\Throwable $th) {
+            $todolodemas['error']['mensaje'] = 'Error en el servidor, ocurrió un error inesperado';
+            $todolodemas['error']['errores'] = ['errorinesperado'=>[$th]];
+            return (new Formatear)->igor(null,500,$todolodemas);
+        }
     }
 }
