@@ -68,28 +68,25 @@ class EmployeeController extends Controller
             {
                 $request->validate([
                     'name' => 'required',
+                    'lastname' => 'required',          
                     'email' => 'required|email',          
+                    'phone' => 'required',          
                 ]);
 
-                DB::beginTransaction(); 
-                $ruta = storage_path("app/public/img/");
+                DB::beginTransaction();
                 
                 $newuser = $this->registrar($request);
 
-                $recurso = new Company;
+                $recurso = new Employee;
                 $recurso->name = $request->name;
-                $recurso->website = $request->website;
+                $recurso->lastname = $request->lastname;
+                $recurso->genero = $request->genero;
+                $recurso->phone = $request->phone;
+                $recurso->company_id = $request->company_id;
                 $recurso->creadopor_id = $user->id;
                 
                 if ($newuser != null) {
                     $recurso->user_id = $newuser;
-                }
-
-                if ($request->file('img')) {
-                    $logo = $request->file('img');
-                    $img = date('YmdHis').'.'.$logo->getClientOriginalExtension();
-                    $logo->move($ruta,$img);
-                    $recurso->logo = $img;
                 }
                 $recurso->save();
           
@@ -153,7 +150,7 @@ class EmployeeController extends Controller
             {  
                 DB::beginTransaction();
     
-                $recurso = Company::with('user','employee')->find($id);
+                $recurso = Employee::find($id);
             
                 if(is_null($recurso)){
                     $todolodemas['info']['mensaje'] = 'No se encontró el registro para actualizar en la base de datos';
@@ -162,16 +159,11 @@ class EmployeeController extends Controller
                 }
     
                 $recurso->name = $request->name;
-                $recurso->website = $request->website;
+                $recurso->lastname = $request->lastname;
+                $recurso->genero = $request->genero;
+                $recurso->phone = $request->phone;
                 $recurso->actualizadopor_id = $user->id;
-
-                if ($request->file('img')) {
-                    $logo = $request->file('img');
-                    $img = date('YmdHis').'.'.$logo->getClientOriginalExtension();
-                    $logo->move($ruta,$img);
-                    $recurso->logo = $img;
-                }
-                $recurso->save();
+                $recurso->update();
 
                 $userUpd = User::find($recurso->user_id);
                 $userUpd->name = $request->name;
