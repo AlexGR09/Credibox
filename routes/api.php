@@ -1,10 +1,10 @@
 <?php
 
+use App\Http\Controllers\API\V1\CompanyController;
+use App\Http\Controllers\API\V1\EmployeeController;
+use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CompanyController;
-use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,13 +17,28 @@ use App\Http\Controllers\AuthController;
 |
 */
 
-Route::post('register', [AuthController::class, 'register']);
-Route::post('login', [AuthController::class, 'login']);
+//Route::post('register', [AuthController::class, 'register']);
+//Route::post('login', [AuthController::class, 'login']);
 
-Route::group( ['middleware' => ["auth:sanctum"]], function(){
-    Route::get('logout', [AuthController::class, 'logout']);
-    Route::resource('company', CompanyController::class)->only('index', 'store', 'show', 'update', 'destroy');
-    Route::resource('employee', EmployeeController::class)->only('index', 'store', 'show', 'update', 'destroy');
+Route::group([], function(){
+
+    //Route::get('logout', [AuthController::class, 'logout']);
+
+    Route::resource('companies', CompanyController::class)->only(
+        'index',
+        'store',
+        'show',
+        'update',
+        'destroy'
+    );
+
+    Route::resource('employees', EmployeeController::class)->only('index',
+        'store',
+        'show',
+        'update',
+        'destroy'
+    );
+
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

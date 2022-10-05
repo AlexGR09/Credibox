@@ -1,24 +1,22 @@
 <?php
 
-namespace App\Models;
+namespace App\Traits;
 
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use App\Models\User;
 use App\Http\Controllers\FormatterController as Formatear;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
-trait hasRegistro {
+trait HasRegister {
 
-    public function registrar($registro) {
+    public function register($registro) {
         try {
             $todolodemas = [];
             $registro->validate([
                 'name' => 'required',
                 'email' => 'required|email|unique:users',
-                'password' => 'required|confirmed'            
+                'password' => 'required|confirmed'
             ]);
-        
+
             $user = new User();
             $user->name = $registro->name;
             $user->email = $registro->email;

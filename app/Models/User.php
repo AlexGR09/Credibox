@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Traits\hasRegistro;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, hasRegistro, hasPermisos, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -42,18 +44,33 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    /**
+     * Roles.
+     *
+     * @return BelongsToMany
+     */
     public function roles()
     {
-        return $this->belongsToMany('App\Models\Role');
-    }
-    
-    public function employee()
-    {
-        return $this->hasMany('App\Models\Employee');
+        return $this->belongsToMany(Role::class);
     }
 
+    /**
+     * Employee
+     *
+     * @return HasMany
+     */
+    public function employee()
+    {
+        return $this->hasMany(Employee::class);
+    }
+
+    /**
+     * Company.
+     *
+     * @return HasMany
+     */
     public function company()
     {
-        return $this->hasMany('App\Models\Company');
+        return $this->hasMany(Company::class);
     }
 }

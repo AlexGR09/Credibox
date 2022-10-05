@@ -4,40 +4,50 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Company extends Model
 {
+    use HasFactory;
+
+    /**
+     * Table.
+     *
+     * @var string
+     */
     protected $table = 'companies';
-    public $timestamps = true;
 
-    use SoftDeletes, HasFactory;
+    /**
+     * Fillable.
+     *
+     * @var string[]
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'logo',
+        'website',
+    ];
 
-    protected $dates = ['deleted_at'];
-    protected $fillable = array('name',
-                                'logo',
-                                'website',
-                                'user_id',
-                                'creadopor',
-                                'actualizadopor');
-
+    /**
+     * User.
+     *
+     * @return BelongsTo
+     */
     public function user()
     {
-        return $this->belongsTo('App\Models\User');
+        return $this->belongsTo(User::class);
     }
 
+    /**
+     * Employee.
+     *
+     * @return HasMany
+     */
     public function employee()
     {
-        return $this->hasMany('App\Models\Employee');
-    }
-
-    public function creadopor()
-    {
-        return $this->belongsTo('App\Models\User');
-    }
-
-    public function actualizadopor()
-    {
-        return $this->belongsTo('App\Models\User');
+        return $this->hasMany(Employee::class);
     }
 }

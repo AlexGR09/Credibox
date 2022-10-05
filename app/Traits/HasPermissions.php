@@ -1,32 +1,29 @@
 <?php
 
-namespace App\Models;
+namespace App\Traits;
 
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use App\Models\Permiso;
 use App\Models\Permisionable;
+use App\Models\Permiso;
 
-trait hasPermisos {
+trait HasPermissions {
 
-    public function puede($user,$tabla,$accion) {
-        
+    public function can($user, $tabla, $accion) {
+
         $user = $user ?: auth()->user();
 
-        $permiso = Permiso::where('nombre','=',$tabla)->first();
+        $permiso = Permiso::where('nombre', '=', $tabla)->first();
 
-        if($permiso) 
-        {
+        if($permiso) {
             $rouls = [];
 
             foreach($user->roles as $rolito)
-                $rouls[] = $rolito->id;            
+                $rouls[] = $rolito->id;
 
             $permisoRol = Permisionable::where('permiso_id','=',$permiso->id);
             $permisoRol = $permisoRol->where('permisionable_type','=','App\Models\Role');
             $permisoRol = $permisoRol->whereIn('permisionable_id',$rouls);
-            $permisoRol = $permisoRol->select('permisionables.'.$accion.' as permiso')->first();            
-                                   
+            $permisoRol = $permisoRol->select('permisionables.'.$accion.' as permiso')->first();
+
             if($permisoRol && $permisoRol->permiso)
                 return $permisoRol->permiso;
 
