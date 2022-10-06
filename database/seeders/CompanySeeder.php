@@ -20,27 +20,27 @@ class CompanySeeder extends Seeder
         DB::table('companies')->insert([
             [
                 'name' => $faker->company,
+                'email' => 'company01@gmail.com',
                 'logo' => $ruta.'logo01.jpg',
                 'website' => $faker->domainName,
-                'user_id' => 2,
             ],
             [
                 'name' => $faker->company,
+                'email' => 'company02@gmail.com',
                 'logo' => $ruta.'logo02.jpg',
                 'website' => $faker->domainName,
-                'user_id' => 3,
             ],
             [
                 'name' => $faker->company,
+                'email' => 'company03@gmail.com',
                 'logo' => $ruta.'logo03.jpg',
                 'website' => $faker->domainName,
-                'user_id' => 4,
             ],
             [
                 'name' => $faker->company,
+                'email' => 'company04@gmail.com',
                 'logo' => $ruta.'logo04.jpg',
                 'website' => $faker->domainName,
-                'user_id' => 5,
             ],
         ]);
     }

@@ -19,6 +19,7 @@ class CreateEmployeesTable extends Migration
 			$table->string('last_name');
             $table->enum('gender', ['F', 'M']);
             $table->string('phone')->unique();
+            $table->string('email')->unique();
 			$table->bigInteger('company_id')->unsigned();
             $table->foreign('company_id')
                 ->references('id')

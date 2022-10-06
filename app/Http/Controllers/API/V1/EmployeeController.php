@@ -3,232 +3,63 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Exception;
-use App\Http\Controllers\FormatterController as Formatear;
 use App\Models\Employee;
-use App\Models\User;
-use App\Traits\hasRegistro;
+use App\Http\Requests\API\V1\EmployeesRequest;
+use App\Http\Requests\API\V1\EmployeeRequest;
+use App\Http\Requests\API\V1\CreateEmployeeRequest;
+use App\Http\Requests\API\V1\DeleteEmployeeRequest;
+use App\Http\Requests\API\V1\UpdateEmployeeRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use App\Http\Resources\API\V1\EmployeeResource;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class EmployeeController extends Controller
 {
 
-    public function index(Request $request)
+    public function index(EmployeesRequest $request)
     {
-        try {
-            $user = auth()->user();
-
-            $todolodemas = [];
-            $limit = env('PAGINATION_LIMIT', 15);
-            $maxPaginationLimit = env('MAX_PAGINATION_LIMIT', 500);
-            $order = 'id';
-            $direction = 'desc';
-
-
-            if(isset($request->l)) $limit = $request->l > $maxPaginationLimit || $request->l == 0 ? $limit : $request->l;
-            if(isset($request->o)) $order = $request->o;
-            if(isset($request->d)) $direction = $request->d;
-
-            if($user->puede($user,'Administracion','r'))
-            {
-                $recurso = Employee::orderBy($order,$direction)->paginate($limit);
-
-            if(count($recurso)==0){
-                $todolodemas['info']['mensaje'] = 'No se encontraron registros en la base de datos';
-                $todolodemas['info']['infos'] = ['registros'=>['No se encontraron registros en la base de datos']];
-                return (new Formatear)->igor($recurso,202,$todolodemas);
-            }
-            return (new Formatear)->igor($recurso,200,$todolodemas);
-            }
-            else{
-                $todolodemas['error']['mensaje'] = 'No cuenta con los permisos para este recurso';
-                $todolodemas['error']['errores'] = ['permisos'=>['No cuenta con los permisos para este recurso']];
-                return (new Formatear)->igor(null,403,$todolodemas);
-            }
-        } catch (\Throwable $th) {
-            $todolodemas['error']['mensaje'] = 'Error en el servidor, ocurrió un error inesperado';
-            $todolodemas['error']['errores'] = ['errorinesperado'=>[$th]];
-            return (new Formatear)->igor(null, 500, $todolodemas);
-        }
+        return EmployeeResource::collection(Employee::paginate());
     }
 
-    public function store(Request $request)
+    public function show(EmployeeRequest $request, $id)
     {
-        try {
-            $user = auth()->user();
-
-            $todolodemas = [];
-
-            if($user->puede($user,'Administracion','c'))
-            {
-                $request->validate([
-                    'name' => 'required',
-                    'lastname' => 'required',
-                    'email' => 'required|email',
-                    'phone' => 'required',
-                ]);
-
-                DB::beginTransaction();
-
-                $newuser = $this->registrar($request);
-
-                $resourcer = new Employee;
-                $recurso->name = $request->name;
-                $recurso->lastname = $request->lastname;
-                $recurso->genero = $request->genero;
-                $recurso->phone = $request->phone;
-                $recurso->company_id = $request->company_id;
-                $recurso->creadopor_id = $user->id;
-
-                if ($newuser != null) {
-                    $recurso->user_id = $newuser;
-                }
-                $recurso->save();
-
-                DB::commit();
-                return (new Formatear)->igor($recurso,201,$todolodemas);
-            }
-
-            else{
-                $todolodemas['error']['mensaje'] = 'No cuenta con los permisos para este recurso';
-                $todolodemas['error']['errores'] = ['permisos'=>['No cuenta con los permisos para este recurso']];
-                return (new Formatear)->igor(null,403,$todolodemas);
-            }
-        } catch (\Throwable $th) {
-            $todolodemas['error']['mensaje'] = 'Error en el servidor, ocurrió un error inesperado';
-            $todolodemas['error']['errores'] = ['errorinesperado'=>[$th]];
-            return (new Formatear)->igor(null,500,$todolodemas);
-        }
+        return new EmployeeResource(Employee::find($id));
     }
 
-    public function show($id, Request $request)
+    public function store(CreateEmployeeRequest $request)
     {
-        try {
-            $user = auth()->user();
-
-            $todolodemas = [];
-
-            if($user->puede($user,'Administracion','r')) //Primero verificar si cuenta con permisos
-            {
-
-                $recurso = Employee::with('user','company')->find($id);
-
-                if (is_null($recurso)) {
-                    $todolodemas['info']['mensaje'] = 'No se encontró el registro buscado en la base de datos';
-                    $todolodemas['info']['infos'] = ['registros'=>['No se encontró el registro buscado en la base de datos']];
-                    return (new Formatear)->igor($recurso,202,$todolodemas);
-                }
-
-                return (new Formatear)->igor($recurso,200,$todolodemas);
-            }
-            else
-            {
-                $todolodemas['error']['mensaje'] = 'No cuenta con los permisos para este recurso';
-                $todolodemas['error']['errores'] = ['permisos'=>['No cuenta con los permisos para este recurso']];
-                return (new Formatear)->igor(null,403,$todolodemas);
-            }
-        } catch (\Throwable $th) {
-            $todolodemas['error']['mensaje'] = 'Error en el servidor, ocurrió un error inesperado';
-            $todolodemas['error']['errores'] = ['errorinesperado'=>[$th]];
-            return (new Formatear)->igor(null,500,$todolodemas);
-        }
+        return new EmployeeResource(Employee::create($request->validated([
+            'name',
+            'last_name',
+            'gender',
+            'phone',
+            'email',
+            'company_id',
+        ])));
     }
 
-    public function update($id, Request $request)
+    public function update(UpdateEmployeeRequest $request, $id)
     {
-        try {
-            $user = auth()->user();
-
-            $todolodemas = [];
-
-            if($user->puede($user,'Administracion','u'))
-            {
-                DB::beginTransaction();
-
-                $recurso = Employee::find($id);
-
-                if(is_null($recurso)){
-                    $todolodemas['info']['mensaje'] = 'No se encontró el registro para actualizar en la base de datos';
-                    $todolodemas['info']['infos'] = ['registros'=>['No se encontró el registro para actualizar en la base de datos']];
-                    return (new Formatear)->igor($recurso,202,$todolodemas);
-                }
-
-                $recurso->name = $request->name;
-                $recurso->lastname = $request->lastname;
-                $recurso->genero = $request->genero;
-                $recurso->phone = $request->phone;
-                $recurso->actualizadopor_id = $user->id;
-                $recurso->update();
-
-                $userUpd = User::find($recurso->user_id);
-                $userUpd->name = $request->name;
-                $userUpd->email = $request->email;
-                $userUpd->password = Hash::make($request->password);
-                $userUpd->update();
-
-                DB::commit();
-
-                return (new Formatear)->igor($recurso,201,$todolodemas);
-
-            }
-
-            else{
-            $todolodemas['error']['mensaje'] = 'No cuenta con los permisos para este recurso';
-            $todolodemas['error']['errores'] = ['permisos'=>['No cuenta con los permisos para este recurso']];
-            return (new Formatear)->igor(null,403,$todolodemas);
-            }
-        } catch (\Throwable $th) {
-            $todolodemas['error']['mensaje'] = 'Error en el servidor, ocurrió un error inesperado';
-            $todolodemas['error']['errores'] = ['errorinesperado'=>[$th]];
-            return (new Formatear)->igor(null,500,$todolodemas);
-        }
+        return new EmployeeResource(Employee::updateOrCreate([
+            'id' => $request['employee'],
+        ],
+            $request->validated([
+                'name',
+                'last_name',
+                'gender',
+                'phone',
+                'email',
+            ]))
+        );
     }
 
-    public function destroy($id, Request $request)
+    public function destroy(DeleteEmployeeRequest $request, $id)
     {
-      try {
-        $user = auth()->user();
-
-        $todolodemas = [];
-
-        if($user->puede($user,'Administracion','d'))
-        {
-            if(isset($request->ids))
-            {
-              $recurso = Employee::whereIn('id',$request->ids)->delete();
-              $todolodemas['info']['mensaje'] = 'Registros eliminado correctamente';
-              $todolodemas['info']['infos'] = ['registros'=>['Registros eliminado correctamente']];
-
-              return (new Formatear)->igor(null,200,$todolodemas);
-            }
-            else
-            {
-              $recurso = Employee::find($id);
-              if (is_null($recurso)) {
-                $todolodemas['info']['mensaje'] = 'No se encontró el registro que se intenta borrar, es probable que haya sido borrado anteriormente';
-                $todolodemas['info']['infos'] = ['registros'=>['No se encontró el registro buscado en la base de datos']];
-                return (new Formatear)->igor($recurso,202,$todolodemas);
-              }
-              else{
-                $recurso->delete();
-
-                $todolodemas['info']['mensaje'] = 'Registro eliminado correctamente';
-                $todolodemas['info']['infos'] = ['registros'=>['Registro eliminado correctamente']];
-                return (new Formatear)->igor($recurso,200,$todolodemas);
-              }
-            }
-        }
-        else{
-          $todolodemas['error']['mensaje'] = 'No cuenta con los permisos para este recurso';
-          $todolodemas['error']['errores'] = ['permisos'=>['No cuenta con los permisos para este recurso']];
-          return (new Formatear)->igor(null,403,$todolodemas);
-        }
-      } catch (Exception $ex) {
-        $todolodemas['error']['mensaje'] = 'Error en el servidor, ocurrió un error inesperado';
-        $todolodemas['error']['errores'] = ['errorinesperado'=>[$th]];
-        return (new Formatear)->igor(null,500,$todolodemas);
-      }
+        Employee::destroy($id);
+        return response()->json([
+            'message' => 'success',
+        ]);
     }
 }
